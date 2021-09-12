@@ -3,6 +3,8 @@ Slave
 View
 .bash_history
 .vscode/
+result.txt
+
 
 # Prerequisites
 *.d

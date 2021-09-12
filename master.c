@@ -1,10 +1,8 @@
-#include <stdio.h>
+
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <sys/wait.h>
 #include <sys/select.h>
+#include "shared_memory.h"
 
 typedef struct
 {
@@ -19,34 +17,34 @@ typedef struct
 #define SLAVE_COUNT(c) ((c<SLAVE_INIT)? c : SLAVE_INIT) 
 #define READ 0
 #define WRITE 1
+#define WRITE_ONLY 00200
 #define PATH_SLAVE "./Slave"
 #define INITIAL_TASKS 1
-#define BUFFER_SIZE 4000
-#define HANDLE_ERROR(msg)   \
-    do                      \
-    {                       \
-        perror(msg);        \
-        exit(EXIT_FAILURE); \
-    } while (0)
+#define BUFFER_SIZE 4096
+
+
 
 int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex);
 int endSlaves(slave_t slaves[], int slaveCount);
+void writeResults(char* buffer,FILE* file, shmem_t* shm_pointer, t_sem* sem);
+void initialize(shmem_t *shmem, t_sem* sem ,int totalTasks);
 
 void sendNewTask(slave_t slave, char *path, int *taskIndex);
 
 int main(int argc, char** argv){
 
-    setvbuf(stdout, NULL, _IONBF, 0);
-    setvbuf(stdin, 0, _IONBF, 0);
-
     int totalTasks = argc - 1, completedTasks = 0, taskIndex = 1;
-    int pendingTasks = totalTasks;
     char** paths = argv;
     int slaveCount = SLAVE_COUNT(totalTasks);
     slave_t slaves[slaveCount];
     FILE* fresult=fopen(RESULT_PATH,"w");
 
-    createSlaves(paths,slaveCount,slaves, &taskIndex);
+    shmem_t shmem;
+    t_sem sem;
+
+    initialize(&shmem, &sem, totalTasks);
+
+    createSlaves(paths, slaveCount, slaves, &taskIndex);
 
     fd_set readSet;
     
@@ -80,10 +78,8 @@ int main(int argc, char** argv){
                     slaves[j].flagEOF = 1;
                 } else {
                     buffer[bytesRead]='\n';
-                    fwrite(buffer,sizeof(char),strlen(buffer),fresult);
-
+                    writeResults(buffer, fresult, &shmem, &sem);
                     completedTasks++;
-                    pendingTasks = totalTasks - completedTasks;
 
                     if (taskIndex < totalTasks + 1) {
                         sendNewTask(slaves[j], paths[taskIndex], &taskIndex);
@@ -93,7 +89,8 @@ int main(int argc, char** argv){
         }
     }
     endSlaves(slaves, slaveCount);
-    printf("all tasks completed\n");
+    deleteSharedMem(&shmem);
+    destroySem(&sem);
     return 0;
 }
 
@@ -158,6 +155,31 @@ int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex) {
 
     return 0;
 }
+void initialize(shmem_t *shmem, t_sem *sem, int totalTasks) {
+
+    if (setvbuf(stdout, NULL, _IONBF, 0) != 0) {
+        HANDLE_ERROR("Error in Setvbuf");
+    }
+    if (setvbuf(stdin, NULL, _IONBF, 0) != 0) {
+        HANDLE_ERROR("Error in Setvbuf");
+    }
+
+    printf("%d\n",totalTasks);
+    *shmem = createSharedMem(SHRD_MEM_OBJ, (totalTasks) * BUFFER_SIZE);
+    *sem = openSem(SEM_OBJ);
+
+}
+
+void writeResults(char* buffer,FILE* file, shmem_t* shmem, t_sem* sem) {
+    
+    int length = strlen(buffer);
+
+    fwrite(buffer, sizeof(char), length, file);
+
+    writeSharedMem(shmem, buffer, length, 3);
+    
+    postSem(sem);
+}
 
 int endSlaves(slave_t slaves[], int slaveCount) {
     int i;
@@ -178,11 +200,8 @@ int endSlaves(slave_t slaves[], int slaveCount) {
     return 0;
 }
         
-
-
 void sendNewTask(slave_t slave, char *path, int *taskIndex) {
     int dim = strlen(path);
-
     if ((write(slave.receiver, path, dim)) == -1) {
         HANDLE_ERROR("Error writing to slave");
     }
