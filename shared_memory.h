@@ -15,6 +15,7 @@
 #define SHRD_MEM_OBJ "/SHM"
 #define SEM_OBJ "/SEM"
 #define BLOCK_SIZE 4096
+#define OFFSET 3
 #define SYS_FAILURE (-1)
 
 typedef struct {
@@ -27,7 +28,7 @@ typedef struct {
 } shmem_t;
 
 shmem_t createSharedMem(char* name, int size);
-void writeSharedMem(shmem_t *shmem, char* buffer, int size, int offset);
+void writeSharedMem(shmem_t *shmem, char* buffer, int size);
 void deleteSharedMem(shmem_t *shmem);
 shmem_t joinSharedMem(char* name, int size);
 char *readSharedMem(shmem_t *shmem);

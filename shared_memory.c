@@ -25,9 +25,9 @@ shmem_t createSharedMem(char* name, int size) {
     return toRet;
 }
 
-void writeSharedMem(shmem_t *shmem, char* buffer, int size, int offset) {
+void writeSharedMem(shmem_t *shmem, char* buffer, int size) {
     memcpy(shmem->address + shmem->wIndex, buffer, size + 1);
-    shmem->wIndex += size + offset;
+    shmem->wIndex += size + OFFSET;
 }
 
 void deleteSharedMem(shmem_t *shmem) {
@@ -36,19 +36,15 @@ void deleteSharedMem(shmem_t *shmem) {
     char *name = shmem->name;
     char *address = shmem->address;
     int size = shmem->size;
-    printf("1");
     if (munmap(address, size) == SYS_FAILURE) {
         HANDLE_ERROR("error at unmapping memory");
     }
-    printf("2");
     if (shm_unlink(name) == SYS_FAILURE) {
         HANDLE_ERROR("error with unlink memory");
     }
-    printf("3");
     if (close(fd) == -1) {
         HANDLE_ERROR("Error in close shm");
     }
-    printf("4");
 }
 
 shmem_t joinSharedMem(char* name, int size) {
@@ -70,7 +66,7 @@ shmem_t joinSharedMem(char* name, int size) {
 char *readSharedMem(shmem_t* shmem) {
     char* toRet = shmem->address + shmem->rIndex;
     int size = strlen(toRet);
-    shmem->rIndex += size + 3;
+    shmem->rIndex += size + OFFSET;
     return toRet;
 }
 

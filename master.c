@@ -6,10 +6,8 @@
 
 typedef struct
 {
-    pid_t pid;
     int sender;         // Devuelve resultados, slaveToMaster.
     int receiver;       // Manda tarea, masterToSlave.
-    int ntasks;         // Tareas siendo ejecutadas por el esclavo.
     int flagEOF;
 } slave_t;
 #define SLAVE_INIT 5
@@ -42,8 +40,8 @@ int main(int argc, char** argv){
     shmem_t shmem;
     t_sem sem;
 
+    sleep(5);
     initialize(&shmem, &sem, totalTasks);
-
     createSlaves(paths, slaveCount, slaves, &taskIndex);
 
     fd_set readSet;
@@ -91,9 +89,9 @@ int main(int argc, char** argv){
     endSlaves(slaves, slaveCount);
     deleteSharedMem(&shmem);
     destroySem(&sem);
+    fclose(fresult);
     return 0;
 }
-
 int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex) {
     int i;
     char* slaveArguments[3];
@@ -149,7 +147,6 @@ int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex) {
         if (close(slaveToMaster[WRITE]) < 0) {
             HANDLE_ERROR("Error closing slave WRITE to master");
         }
-        slaves[i].pid = pid;
         (*taskIndex)++;
     }
 
@@ -176,7 +173,7 @@ void writeResults(char* buffer,FILE* file, shmem_t* shmem, t_sem* sem) {
 
     fwrite(buffer, sizeof(char), length, file);
 
-    writeSharedMem(shmem, buffer, length, 3);
+    writeSharedMem(shmem, buffer, length);
     
     postSem(sem);
 }
