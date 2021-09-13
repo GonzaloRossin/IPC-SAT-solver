@@ -42,8 +42,8 @@ int main(int argc, char** argv){
     shmem_t shmem;
     t_sem sem;
 
-    sleep(5);
     initialize(&shmem, &sem, totalTasks);
+    sleep(2);
     createSlaves(paths, slaveCount, slaves, &taskIndex);
 
     fd_set readSet;
