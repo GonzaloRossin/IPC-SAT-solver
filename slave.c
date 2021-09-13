@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -19,8 +22,9 @@ int main(int argc, char* argv[]) {
     while ((dimRead = read(STDIN_FILENO, task, BUFFER_SIZE)) != 0) { 
         if (dimRead == -1) {
             printf("Error in read");
+        } else {
+            task[dimRead] = 0;
         }
-        task[dimRead] = 0;
         doTask(task);
     }
 
@@ -36,14 +40,14 @@ void doTask(char task[]){
     FILE *stream;
     if ((stream = popen(command, "r")) == NULL) {
         printf("Error en popen");
+    } else {
+        int dim = fread(output, sizeof(char), 499, stream);
+        output[dim] = 0;
+
+        printf("PID: %d Filename: %s\n%s", getpid(), task, output);
+
+        if (pclose(stream) == -1) {
+            printf("Error en pclose");
     }
-    
-    int dim = fread(output, sizeof(char), 499, stream);
-    output[dim] = 0;
-
-    printf("PID: %d Filename: %s\n%s", getpid(), task, output);
-
-    if (pclose(stream) == -1) {
-        printf("Error en pclose");
     }
 }

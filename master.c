@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
 
 #include <string.h>
 #include <sys/wait.h>
@@ -12,7 +14,7 @@ typedef struct
 } slave_t;
 #define SLAVE_INIT 5
 #define RESULT_PATH "result.txt"
-#define SLAVE_COUNT(c) ((c<SLAVE_INIT)? c : SLAVE_INIT) 
+#define SLAVE_COUNT(c) (((c)<SLAVE_INIT)? c : SLAVE_INIT) 
 #define READ 0
 #define WRITE 1
 #define WRITE_ONLY 00200

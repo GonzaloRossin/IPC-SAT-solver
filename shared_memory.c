@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include "shared_memory.h"
 
 shmem_t createSharedMem(char* name, int size) {
@@ -51,7 +54,6 @@ shmem_t joinSharedMem(char* name, int size) {
 
     shmem_t toRet;
     strcpy(toRet.name, name);
-    toRet.rIndex = 0;
     toRet.rIndex = 0;
     toRet.size = size;
     if ((toRet.fd = (shm_open(name, O_RDONLY, 0))) == -1) {

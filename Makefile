@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS= -Wall
+CFLAGS= -Wall -g -O0
 GCCLIBS= -lrt -pthread
 
 EXEC = Master Slave View
