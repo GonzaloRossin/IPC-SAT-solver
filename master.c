@@ -75,8 +75,8 @@ int main(int argc, char** argv){
                     HANDLE_ERROR("Error at reading from slave");
                 } else if (bytesRead == 0) {
                     slaves[j].flagEOF = 1;
-                } else if (bytesRead >= 4096) {
-                    HANDLE_ERROR("Error at reading from slave, read too many bytes");
+                } else if (bytesRead >= BUFFER_SIZE) {
+                    HANDLE_ERROR("Error at reading from slave, buffer overflow");
                 } else {
                     buffer[bytesRead]='\n';
                     writeResults(buffer, fresult, &shmem, &sem);
