@@ -14,15 +14,15 @@ shmem_t createSharedMem(char* name, int size) {
     toRet.fd = shm_open(name, O_CREAT | O_RDWR, 0666);
 
     if (toRet.fd == SYS_FAILURE) {
-        HANDLE_ERROR("error at creating shared memory object");
+        HANDLE_ERROR("Error at creating shared memory object");
     }
     if (ftruncate(toRet.fd, size) == SYS_FAILURE) {
-        HANDLE_ERROR("error at extending memory object");
+        HANDLE_ERROR("Error at extending memory object");
     }
 
     toRet.address = mmap(NULL, toRet.size, PROT_WRITE | PROT_READ, MAP_SHARED, toRet.fd, 0);    
     if(toRet.address == MAP_FAILED) {
-        HANDLE_ERROR("error at mapping shared memory");
+        HANDLE_ERROR("Error at mapping shared memory");
     }
 
     return toRet;
@@ -40,10 +40,10 @@ void deleteSharedMem(shmem_t *shmem) {
     char *address = shmem->address;
     int size = shmem->size;
     if (munmap(address, size) == SYS_FAILURE) {
-        HANDLE_ERROR("error at unmapping memory");
+        HANDLE_ERROR("Error at unmapping memory");
     }
     if (shm_unlink(name) == SYS_FAILURE) {
-        HANDLE_ERROR("error with unlink memory");
+        HANDLE_ERROR("Error with unlink memory");
     }
     if (close(fd) == -1) {
         HANDLE_ERROR("Error in close shm");
@@ -60,7 +60,7 @@ shmem_t joinSharedMem(char* name, int size) {
         HANDLE_ERROR("Error opening shmem in vision");
     }    
     if((toRet.address = (mmap(NULL, toRet.size, PROT_READ, MAP_SHARED, toRet.fd, 0))) == MAP_FAILED) {
-        HANDLE_ERROR("error at mapping shared memory");
+        HANDLE_ERROR("Error at mapping shared memory");
     }
 
     return toRet;
@@ -75,7 +75,7 @@ char *readSharedMem(shmem_t* shmem) {
 void closeSharedMed(shmem_t *shmem) {
     int fd = shmem->fd;
     if (munmap(shmem->address, shmem->size) == SYS_FAILURE) {
-        HANDLE_ERROR("error at unmapping memory");
+        HANDLE_ERROR("Error at unmapping memory");
     }
     if (close(fd) == -1) {
         HANDLE_ERROR("Error in close shm");
@@ -88,34 +88,34 @@ t_sem openSem(char* name) {
     strcpy(toRet.name, name);
     toRet.access = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, 0);
     if (toRet.access == SEM_FAILED) {
-        HANDLE_ERROR("error with open sem");
+        HANDLE_ERROR("Error with open sem");
     }
     return toRet;
 }
 
 void waitSem(t_sem *sem) {
     if(sem_wait(sem->access) == SYS_FAILURE) {
-        HANDLE_ERROR("error with function wait_semaphore");
+        HANDLE_ERROR("Error with function wait_semaphore");
     }
 }
 
 void postSem(t_sem *sem) {
     if(sem_post(sem->access) == SYS_FAILURE) {
-        HANDLE_ERROR("error at posting semaphore");
+        HANDLE_ERROR("Error at posting semaphore");
     }
 }
 
 void closeSem(t_sem *sem) {
     if (sem_close(sem->access) == SYS_FAILURE) {
-        HANDLE_ERROR("error at closing sem");
+        HANDLE_ERROR("Error at closing sem");
     }
 }
 
 void destroySem(t_sem* sem) {
     if(sem_close(sem->access) == SYS_FAILURE) {
-        HANDLE_ERROR("error at closing sem");
+        HANDLE_ERROR("Error at closing sem");
     }
     if (sem_unlink(sem->name) == SYS_FAILURE) {
-        HANDLE_ERROR("error at unlinking sem");
+        HANDLE_ERROR("Error at unlinking sem");
     }
 }

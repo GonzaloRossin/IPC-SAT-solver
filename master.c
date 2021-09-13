@@ -72,10 +72,11 @@ int main(int argc, char** argv){
                 
                 int bytesRead = read(slaves[j].sender, buffer, BUFFER_SIZE);
                 if (bytesRead == -1) {
-                    HANDLE_ERROR("error at reading from slave");
-                }
-                if (bytesRead == 0) {
+                    HANDLE_ERROR("Error at reading from slave");
+                } else if (bytesRead == 0) {
                     slaves[j].flagEOF = 1;
+                } else if (bytesRead >= 4096) {
+                    HANDLE_ERROR("Error at reading from slave, read too many bytes");
                 } else {
                     buffer[bytesRead]='\n';
                     writeResults(buffer, fresult, &shmem, &sem);
