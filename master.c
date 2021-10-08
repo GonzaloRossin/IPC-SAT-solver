@@ -8,8 +8,8 @@
 
 typedef struct
 {
-    int sender;         // Devuelve resultados, slaveToMaster.
-    int receiver;       // Manda tarea, masterToSlave.
+    int sender[2];         // Devuelve resultados, slaveToMaster.
+    int receiver[2];       // Manda tarea, masterToSlave.
     int flagEOF;
 } slave_t;
 #define SLAVE_INIT 5
@@ -58,9 +58,9 @@ int main(int argc, char** argv){
 
             slave_t slave=slaves[i];
             if (slave.flagEOF == 0) {
-                FD_SET(slaves[i].sender, &readSet);
-                if (nfds <= slaves[i].sender)
-                    nfds = slaves[i].sender;
+                FD_SET(slaves[i].sender[READ], &readSet);
+                if (nfds <= slaves[i].sender[READ])
+                    nfds = slaves[i].sender[READ];
             }
         }
         int retval = select(nfds + 1, &readSet, NULL, NULL, NULL);
@@ -68,9 +68,9 @@ int main(int argc, char** argv){
             HANDLE_ERROR("Error at select function");
         }
         for (j = 0; retval > 0 && j < slaveCount; j++) {
-            if (FD_ISSET(slaves[j].sender, &readSet)) {
+            if (FD_ISSET(slaves[j].sender[READ], &readSet)) {
                 
-                int bytesRead = read(slaves[j].sender, buffer, BUFFER_SIZE);
+                int bytesRead = read(slaves[j].sender[READ], buffer, BUFFER_SIZE);
                 if (bytesRead == -1) {
                     HANDLE_ERROR("Error at reading from slave");
                 } else if (bytesRead == 0) {
@@ -108,19 +108,29 @@ int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex) {
         if (pipe(masterToSlave) < 0) {
             HANDLE_ERROR("Pipe Error Master");
         }
-        slaves[i].receiver = masterToSlave[WRITE];
+        slaves[i].receiver[WRITE] = masterToSlave[WRITE];
+        slaves[i].receiver[READ] = masterToSlave[READ];
 
         pipe(slaveToMaster);
         if (pipe(slaveToMaster) < 0) {
             HANDLE_ERROR("Pipe Error Slave ");
         }
-        slaves[i].sender = slaveToMaster[READ];
+        slaves[i].sender[READ] = slaveToMaster[READ];
+        slaves[i].sender[WRITE] = slaveToMaster[WRITE];
         slaves[i].flagEOF = 0;
         int pid;
         if ((pid = fork()) == -1) {
             HANDLE_ERROR("Fork Error");
         }
         else if (pid == 0) {
+            int j;
+            printf("index: %d", i);
+            for(j = 0; j < i; j++) {
+                close(slaves[j].receiver[WRITE]);
+                close(slaves[j].receiver[READ]);
+                close(slaves[j].sender[WRITE]);
+                close(slaves[j].sender[READ]);
+            }
             if (close(masterToSlave[WRITE]) < 0) {
                 HANDLE_ERROR("Error closing slave WRITE to master");
             }
@@ -152,7 +162,6 @@ int createSlaves(char** paths,int dimSlaves, slave_t slaves[], int *taskIndex) {
         }
         (*taskIndex)++;
     }
-
     return 0;
 }
 void initialize(shmem_t *shmem, t_sem *sem, int totalTasks) {
@@ -184,11 +193,11 @@ void writeResults(char* buffer,FILE* file, shmem_t* shmem, t_sem* sem) {
 int endSlaves(slave_t slaves[], int slaveCount) {
     int i;
     for (i = 0; i < slaveCount; i++) {
-        if (close(slaves[i].receiver) == -1) {
+        if (close(slaves[i].receiver[WRITE]) == -1) {
             HANDLE_ERROR("Error closing reciever from slave");
         }
 
-        if (close(slaves[i].sender) == -1) {
+        if (close(slaves[i].sender[READ]) == -1) {
             HANDLE_ERROR("Error closing sender from slave");
         }
     }
@@ -202,7 +211,7 @@ int endSlaves(slave_t slaves[], int slaveCount) {
         
 void sendNewTask(slave_t slave, char *path, int *taskIndex) {
     int dim = strlen(path);
-    if ((write(slave.receiver, path, dim)) == -1) {
+    if ((write(slave.receiver[WRITE], path, dim)) == -1) {
         HANDLE_ERROR("Error writing to slave");
     }
     (*taskIndex)++;
